@@ -211,3 +211,63 @@ When scheduling tasks for other groups, use the `target_group_jid` parameter wit
 - `schedule_task(prompt: "...", schedule_type: "cron", schedule_value: "0 9 * * 1", target_group_jid: "120363336345536173@g.us")`
 
 The task will run in that group's context with access to their files and memory.
+
+---
+
+## Deal Scanner — Admin Setup (Main Group Only)
+
+You have write access to `/workspace/project/groups/global/deal-scanner/`.
+
+### Step 1 — Style learning
+
+When the owner provides photo URLs for style learning:
+
+1. Open each URL with `agent-browser`, screenshot it, and analyze the clothing item visually.
+2. After processing all photos, synthesize the patterns and write the enriched profile to:
+   `/workspace/project/groups/global/deal-scanner/style-profile.json`
+3. Confirm how many photos were analyzed and what style patterns were found.
+
+Key things to extract and store in the profile:
+- Silhouettes per category (tops, dresses, skirts, outerwear)
+- Color palette (primary colors, accent colors, patterns, colors to avoid)
+- Preferred fabrics/textures
+- Aesthetic keywords (e.g. "classic", "feminine", "minimalist", "bohemian")
+- Brand affinities (strong / moderate / avoid)
+
+The hard rule is **non-negotiable and must always be in the profile**:
+```json
+"hard_rules": {
+  "skirt_dress_length": {
+    "allowed": ["above-knee", "below-knee"],
+    "forbidden": ["mini", "micro-mini"],
+    "enforcement": "STRICT"
+  }
+}
+```
+
+### Step 2 — Schedule daily scan for a clothing group
+
+After the owner identifies which WhatsApp group to send deals to:
+
+1. Look up its JID:
+   ```bash
+   sqlite3 /workspace/project/store/messages.db \
+     "SELECT jid, name FROM chats WHERE is_group=1 ORDER BY last_message_time DESC LIMIT 20;"
+   ```
+2. Create the scheduled task:
+   ```
+   schedule_task(
+     prompt: "Run /deal-scanner — scan today's clothing stores for deals matching the style profile in /workspace/global/deal-scanner/style-profile.json. Send the formatted digest to this group.",
+     schedule_type: "cron",
+     schedule_value: "0 8 * * *",
+     target_group_jid: "<JID>",
+     context_mode: "isolated"
+   )
+   ```
+3. Confirm to the owner that the scan is scheduled daily at 8 AM.
+
+### Updating the style profile later
+
+When the owner shares more photos or asks to update their style preferences:
+- Read the current profile, merge in new observations, write back.
+- Increment `photo_count_analyzed` and update `last_updated`.
