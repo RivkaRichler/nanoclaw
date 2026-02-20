@@ -113,6 +113,42 @@ mcp__nanoclaw__send_message(text="<formatted digest>")
 Run this once (or when the owner asks to re-learn the style) to populate
 `style-profile.json` from their past photos.
 
+Trigger with:
+```
+/deal-scanner learn
+```
+Then provide one or more sources (any mix):
+- A Google Drive folder link
+- A Google Doc link (containing product URLs)
+- A plain list of product URLs pasted directly
+
+---
+
+### Step 0 · Collect all URLs to analyze
+
+**If given a Google Drive folder link:**
+```bash
+agent-browser open <drive-folder-url>
+agent-browser wait --load networkidle
+agent-browser snapshot -c
+```
+The snapshot will list files. For each image file thumbnail, click it to open
+the full-size viewer, screenshot it, then go back and do the next one.
+If the folder has many pages, use the "next" arrow or scroll to load more.
+
+**If given a Google Doc link:**
+```bash
+agent-browser open <doc-url>
+agent-browser wait --load networkidle
+agent-browser snapshot -c
+```
+Extract every hyperlink visible in the document — these are the product URLs.
+Then process each product URL individually (step 1 below).
+
+**If given a plain list of URLs:** proceed directly to step 1.
+
+---
+
 ### Instructions
 
 You will be given a list of product image URLs (items the owner has shared

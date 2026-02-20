@@ -83,9 +83,9 @@ A daily clothing deal scanner is available via the `/deal-scanner` skill.
 /deal-scanner scan
 ```
 
-**Learn style from photo URLs** (main group only — needs write access):
+**Learn style from photos/links** (main group only — needs write access):
 ```
-/deal-scanner learn  [then provide the URL list]
+/deal-scanner learn  [then provide a Google Drive folder link, Google Doc link, or plain URL list]
 ```
 
 **Set up daily scheduled scan for a clothing group** (main group only):
