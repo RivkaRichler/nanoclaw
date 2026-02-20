@@ -15,24 +15,50 @@ import { execSync } from 'child_process';
 const ENV_KEY = 'CLAUDE_CODE_OAUTH_TOKEN';
 const envPath = path.join(process.cwd(), '.env');
 
-function getToken(): string {
+function readStdin(): Promise<string> {
+  return new Promise((resolve) => {
+    let data = '';
+    process.stdin.setEncoding('utf-8');
+    process.stdin.on('data', (chunk) => {
+      data += chunk;
+    });
+    process.stdin.on('end', () => resolve(data.trim()));
+    process.stdin.on('error', () => resolve(''));
+    // Timeout: if nothing arrives in 500ms, give up
+    setTimeout(() => resolve(data.trim()), 500);
+  });
+}
+
+function runClaudeSetupToken(): string {
+  // Unset CLAUDECODE so the CLI doesn't refuse to run inside a Claude Code session
+  const env = { ...process.env };
+  delete env['CLAUDECODE'];
+  try {
+    return execSync('claude setup-token', {
+      encoding: 'utf-8',
+      env,
+      timeout: 15000,
+      input: '', // don't block waiting for stdin
+    }).trim();
+  } catch {
+    return '';
+  }
+}
+
+async function getToken(): Promise<string> {
   // 1. CLI argument
   const arg = process.argv[2];
-  if (arg && arg.trim()) return arg.trim();
+  if (arg?.trim()) return arg.trim();
 
-  // 2. Stdin (piped)
+  // 2. Stdin (piped) — with timeout so we don't block if nothing is piped
   if (!process.stdin.isTTY) {
-    const piped = fs.readFileSync('/dev/stdin', 'utf-8').trim();
+    const piped = await readStdin();
     if (piped) return piped;
   }
 
   // 3. Auto-run `claude setup-token`
-  try {
-    const output = execSync('claude setup-token', { encoding: 'utf-8' }).trim();
-    if (output) return output;
-  } catch {
-    // claude CLI not found or failed — handled below
-  }
+  const output = runClaudeSetupToken();
+  if (output) return output;
 
   console.error(
     'Error: no token provided and `claude setup-token` failed.\n' +
@@ -56,7 +82,6 @@ function updateEnv(token: string): void {
   if (idx !== -1) {
     lines[idx] = keyLine;
   } else {
-    // Add after any leading comments/blank lines at the top
     lines.push(keyLine);
   }
 
@@ -65,6 +90,6 @@ function updateEnv(token: string): void {
   fs.writeFileSync(envPath, lines.join('\n') + '\n', 'utf-8');
 }
 
-const token = getToken();
+const token = await getToken();
 updateEnv(token);
 console.log(`✓ ${ENV_KEY} written to .env`);
