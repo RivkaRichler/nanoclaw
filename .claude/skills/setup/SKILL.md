@@ -82,21 +82,13 @@ Run `./.claude/skills/setup/scripts/03-setup-container.sh --runtime <chosen>` an
 
 **If TEST_OK=false but BUILD_OK=true:** The image built but won't run. Check logs — common cause is runtime not fully started. Wait a moment and retry the test.
 
-## 4. Claude Authentication (No Script)
+## 4. Claude Authentication
 
 If HAS_ENV=true from step 1, read `.env` and check if it already has `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`. If so, confirm with user: "You already have Claude credentials configured. Want to keep them or reconfigure?" If keeping, skip to step 5.
 
-AskUserQuestion: Claude subscription (Pro/Max) vs Anthropic API key?
+Run the `/setup-token` skill to configure Claude credentials. It will automatically capture the OAuth token from the local Claude Code installation or guide through API key entry. The skill handles `.env` writing and container sync — no need to duplicate that logic here.
 
-**Subscription:** Tell the user:
-1. Open another terminal and run: `claude setup-token`
-2. Copy the token it outputs
-3. Add it to the `.env` file in the project root: `CLAUDE_CODE_OAUTH_TOKEN=<token>`
-4. Let me know when done
-
-Do NOT ask the user to paste the token into the chat. Do NOT use AskUserQuestion to collect the token. Just tell them what to do, then wait for confirmation that they've added it to `.env`. Once confirmed, verify the `.env` file has the key.
-
-**API key:** Tell the user to add `ANTHROPIC_API_KEY=<key>` to the `.env` file in the project root, then let you know when done. Once confirmed, verify the `.env` file has the key.
+After `/setup-token` completes, verify `.env` has a credential before continuing to step 5.
 
 ## 5. WhatsApp Authentication
 
